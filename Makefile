@@ -108,9 +108,15 @@ endif
 # AltiVec optims
 ifeq ($(SYS_ARCH),PPC)
 ifneq ($(AS),)
+ifeq ($(HAVE_VSX),yes)
 SRCS += common/ppc/mc.c common/ppc/pixel.c common/ppc/dct.c \
         common/ppc/quant.c common/ppc/deblock.c \
         common/ppc/predict.c
+else
+SRCS += common/ppc/mc.c common/ppc/pixel.c common/ppc/dct.c \
+        common/ppc/quant.c common/ppc/deblock.c \
+        common/ppc/predict.c
+endif
 endif
 endif
 

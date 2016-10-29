@@ -1406,6 +1406,7 @@ PROF_GEN_LD=$PROF_GEN_LD
 PROF_USE_CC=$PROF_USE_CC
 PROF_USE_LD=$PROF_USE_LD
 HAVE_OPENCL=$opencl
+HAVE_VSX=$vsx
 EOF
 
 if [ $compiler_style = MS ]; then
