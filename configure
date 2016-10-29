@@ -357,6 +357,7 @@ chroma_format="all"
 compiler="GNU"
 compiler_style="GNU"
 opencl="yes"
+vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
 LDFLAGS="$LDFLAGS"
@@ -473,6 +474,9 @@ for opt do
             ;;
         --host=*)
             host="$optarg"
+            ;;
+        --disable-vsx)
+            vsx="no"
             ;;
         --disable-opencl)
             opencl="no"
@@ -737,9 +741,13 @@ case $host_cpu in
                 CFLAGS="$CFLAGS -maltivec -mabi=altivec"
                 define HAVE_ALTIVEC_H
             fi
-            if cc_check "" "-mvsx" ; then
-                CFLAGS="$CFLAGS -mvsx"
-                define HAVE_VSX
+            if [ "$vsx" != "no" ] || [ "$host_cpu" = "powerpc64le" -a "$vsx" != "no" ] ; then
+                vsx=no
+                if cc_check "" "-mvsx" ; then
+                    CFLAGS="$CFLAGS -mvsx"
+                    define HAVE_VSX
+                    vsx=yes
+                fi
             fi
         fi
         ;;
@@ -1396,6 +1404,7 @@ PROF_GEN_LD=$PROF_GEN_LD
 PROF_USE_CC=$PROF_USE_CC
 PROF_USE_LD=$PROF_USE_LD
 HAVE_OPENCL=$opencl
+HAVE_VSX=$vsx
 EOF
 
 if [ $compiler_style = MS ]; then
