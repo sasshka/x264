@@ -109,9 +109,9 @@ endif
 ifeq ($(SYS_ARCH),PPC)
 ifneq ($(AS),)
 ifeq ($(HAVE_VSX),yes)
-SRCS += common/ppc/mc.c common/ppc/pixel.c common/ppc/dct.c \
-        common/ppc/quant.c common/ppc/deblock.c \
-        common/ppc/predict.c
+SRCS += common/ppc/mc_vsx.c common/ppc/pixel_vsx.c common/ppc/dct_vsx.c \
+        common/ppc/quant.c common/ppc/deblock_vsx.c \
+        common/ppc/predict_vsx.c
 else
 SRCS += common/ppc/mc.c common/ppc/pixel.c common/ppc/dct.c \
         common/ppc/quant.c common/ppc/deblock.c \
