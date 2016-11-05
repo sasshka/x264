@@ -417,6 +417,47 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     }
 }
 
+#define MC_CHROMA8_STEP \
+        src0v_8 = src2v_8; \
+        src1v_8 = src3v_8; \
+        src2v_8 = vec_vsx_ld( 0, srcp ); \
+        src3v_8 = vec_vsx_ld( 16, srcp ); \
+\
+        src3v_8 = VSLD( src2v_8, src3v_8, 2 ); \
+\
+        src0v_16h = vec_u8_to_u16_h( src0v_8 ); \
+        src0v_16l = vec_u8_to_u16_l( src0v_8 ); \
+        src1v_16h = vec_u8_to_u16_h( src1v_8 ); \
+        src1v_16l = vec_u8_to_u16_l( src1v_8 ); \
+        src2v_16h = vec_u8_to_u16_h( src2v_8 ); \
+        src2v_16l = vec_u8_to_u16_l( src2v_8 ); \
+        src3v_16h = vec_u8_to_u16_h( src3v_8 ); \
+        src3v_16l = vec_u8_to_u16_l( src3v_8 ); \
+\
+        dstv_16h = vec_mladd( coeff0v, src0v_16h, k32v ); \
+        dstv_16l = vec_mladd( coeff0v, src0v_16l, k32v ); \
+        dstv_16h = vec_mladd( coeff1v, src1v_16h, dstv_16h ); \
+        dstv_16l = vec_mladd( coeff1v, src1v_16l, dstv_16l ); \
+        dstv_16h = vec_mladd( coeff2v, src2v_16h, dstv_16h ); \
+        dstv_16l = vec_mladd( coeff2v, src2v_16l, dstv_16l ); \
+        dstv_16h = vec_mladd( coeff3v, src3v_16h, dstv_16h ); \
+        dstv_16l = vec_mladd( coeff3v, src3v_16l, dstv_16l ); \
+\
+        dstv_16h = vec_sr( dstv_16h, shiftv ); \
+        dstv_16l = vec_sr( dstv_16l, shiftv ); \
+\
+        dstuv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm0v ); \
+        dstvv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm1v ); \
+\
+        VEC_STORE8( dstuv, dstu ); \
+        VEC_STORE8( dstvv, dstv ); \
+\
+        srcp += i_src_stride; \
+        dstu += i_dst_stride; \
+        dstv += i_dst_stride;
+
+
+
 static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
                                    uint8_t *src, intptr_t i_src_stride,
                                    int mvx, int mvy, int i_height )
@@ -463,83 +504,12 @@ static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     src3v_8 = vec_vsx_ld( 16, src );
     src3v_8 = VSLD( src2v_8, src3v_8, 2 );
 
-    for( int y = 0; y < i_height; y += 2 )
+    for( int y = 0; y < i_height; y += 4 )
     {
-        src0v_8 = src2v_8;
-        src1v_8 = src3v_8;
-        src2v_8 = vec_vsx_ld( 0, srcp );
-        src3v_8 = vec_vsx_ld( 16, srcp );
-
-        src3v_8 = VSLD( src2v_8, src3v_8, 2 );
-
-        src0v_16h = vec_u8_to_u16_h( src0v_8 );
-        src0v_16l = vec_u8_to_u16_l( src0v_8 );
-        src1v_16h = vec_u8_to_u16_h( src1v_8 );
-        src1v_16l = vec_u8_to_u16_l( src1v_8 );
-        src2v_16h = vec_u8_to_u16_h( src2v_8 );
-        src2v_16l = vec_u8_to_u16_l( src2v_8 );
-        src3v_16h = vec_u8_to_u16_h( src3v_8 );
-        src3v_16l = vec_u8_to_u16_l( src3v_8 );
-
-        dstv_16h = vec_mladd( coeff0v, src0v_16h, k32v );
-        dstv_16l = vec_mladd( coeff0v, src0v_16l, k32v );
-        dstv_16h = vec_mladd( coeff1v, src1v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff1v, src1v_16l, dstv_16l );
-        dstv_16h = vec_mladd( coeff2v, src2v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff2v, src2v_16l, dstv_16l );
-        dstv_16h = vec_mladd( coeff3v, src3v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff3v, src3v_16l, dstv_16l );
-
-        dstv_16h = vec_sr( dstv_16h, shiftv );
-        dstv_16l = vec_sr( dstv_16l, shiftv );
-
-        dstuv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm0v );
-        dstvv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm1v );
-
-        VEC_STORE8( dstuv, dstu );
-        VEC_STORE8( dstvv, dstv );
-
-        srcp += i_src_stride;
-        dstu += i_dst_stride;
-        dstv += i_dst_stride;
-
-        src0v_8 = src2v_8;
-        src1v_8 = src3v_8;
-        src2v_8 = vec_vsx_ld( 0, srcp );
-        src3v_8 = vec_vsx_ld( 16, srcp );
-
-        src3v_8 = VSLD( src2v_8, src3v_8, 2 );
-
-        src0v_16h = vec_u8_to_u16_h( src0v_8 );
-        src0v_16l = vec_u8_to_u16_l( src0v_8 );
-        src1v_16h = vec_u8_to_u16_h( src1v_8 );
-        src1v_16l = vec_u8_to_u16_l( src1v_8 );
-        src2v_16h = vec_u8_to_u16_h( src2v_8 );
-        src2v_16l = vec_u8_to_u16_l( src2v_8 );
-        src3v_16h = vec_u8_to_u16_h( src3v_8 );
-        src3v_16l = vec_u8_to_u16_l( src3v_8 );
-
-        dstv_16h = vec_mladd( coeff0v, src0v_16h, k32v );
-        dstv_16l = vec_mladd( coeff0v, src0v_16l, k32v );
-        dstv_16h = vec_mladd( coeff1v, src1v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff1v, src1v_16l, dstv_16l );
-        dstv_16h = vec_mladd( coeff2v, src2v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff2v, src2v_16l, dstv_16l );
-        dstv_16h = vec_mladd( coeff3v, src3v_16h, dstv_16h );
-        dstv_16l = vec_mladd( coeff3v, src3v_16l, dstv_16l );
-
-        dstv_16h = vec_sr( dstv_16h, shiftv );
-        dstv_16l = vec_sr( dstv_16l, shiftv );
-
-        dstuv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm0v );
-        dstvv = (vec_u8_t)vec_perm( dstv_16h, dstv_16l, perm1v );
-
-        VEC_STORE8( dstuv, dstu );
-        VEC_STORE8( dstvv, dstv );
-
-        srcp += i_src_stride;
-        dstu += i_dst_stride;
-        dstv += i_dst_stride;
+        MC_CHROMA8_STEP
+        MC_CHROMA8_STEP
+        MC_CHROMA8_STEP
+        MC_CHROMA8_STEP
     }
 }
 
