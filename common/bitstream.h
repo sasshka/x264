@@ -30,12 +30,6 @@
 
 typedef struct
 {
-    uint8_t i_bits;
-    uint8_t i_size;
-} vlc_t;
-
-typedef struct
-{
     uint16_t i_bits;
     uint8_t  i_size;
     /* Next level table to use */
@@ -60,12 +54,6 @@ typedef struct
     ALIGNED_16( dctcoef level[18] );
 } x264_run_level_t;
 
-extern const vlc_t x264_coeff0_token[6];
-extern const vlc_t x264_coeff_token[6][16][4];
-extern const vlc_t x264_total_zeros[15][16];
-extern const vlc_t x264_total_zeros_2x2_dc[3][4];
-extern const vlc_t x264_total_zeros_2x4_dc[7][8];
-
 typedef struct
 {
     uint8_t *(*nal_escape)( uint8_t *dst, uint8_t *src, uint8_t *end );
@@ -77,6 +65,7 @@ typedef struct
                                                   intptr_t ctx_block_cat, x264_cabac_t *cb );
 } x264_bitstream_function_t;
 
+#define x264_bitstream_init x264_template(bitstream_init)
 void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf );
 
 /* A larger level table size theoretically could help a bit at extremely

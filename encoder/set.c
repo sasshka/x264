@@ -107,13 +107,14 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->i_mb_height= ( param->i_height + 15 ) / 16;
     sps->i_chroma_format_idc = csp >= X264_CSP_I444 ? CHROMA_444 :
                                csp >= X264_CSP_I422 ? CHROMA_422 : CHROMA_420;
+    sps->i_bitdepth = param->i_bitdepth;
 
     sps->b_qpprime_y_zero_transform_bypass = param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant == 0;
     if( sps->b_qpprime_y_zero_transform_bypass || sps->i_chroma_format_idc == CHROMA_444 )
         sps->i_profile_idc  = PROFILE_HIGH444_PREDICTIVE;
     else if( sps->i_chroma_format_idc == CHROMA_422 )
         sps->i_profile_idc  = PROFILE_HIGH422;
-    else if( BIT_DEPTH > 8 )
+    else if( param->i_bitdepth > 8 )
         sps->i_profile_idc  = PROFILE_HIGH10;
     else if( param->analyse.b_transform_8x8 || param->i_cqm_preset != X264_CQM_FLAT )
         sps->i_profile_idc  = PROFILE_HIGH;
@@ -287,8 +288,8 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
         bs_write_ue( s, sps->i_chroma_format_idc );
         if( sps->i_chroma_format_idc == CHROMA_444 )
             bs_write1( s, 0 ); // separate_colour_plane_flag
-        bs_write_ue( s, BIT_DEPTH-8 ); // bit_depth_luma_minus8
-        bs_write_ue( s, BIT_DEPTH-8 ); // bit_depth_chroma_minus8
+        bs_write_ue( s, sps->i_bitdepth-8 ); // bit_depth_luma_minus8
+        bs_write_ue( s, sps->i_bitdepth-8 ); // bit_depth_chroma_minus8
         bs_write1( s, sps->b_qpprime_y_zero_transform_bypass );
         bs_write1( s, 0 ); // seq_scaling_matrix_present_flag
     }
@@ -780,31 +781,6 @@ int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
 
     return 0;
 }
-
-const x264_level_t x264_levels[] =
-{
-    { 10,     1485,     99,    396,     64,    175,   64, 64,  0, 2, 0, 0, 1 },
-    {  9,     1485,     99,    396,    128,    350,   64, 64,  0, 2, 0, 0, 1 }, /* "1b" */
-    { 11,     3000,    396,    900,    192,    500,  128, 64,  0, 2, 0, 0, 1 },
-    { 12,     6000,    396,   2376,    384,   1000,  128, 64,  0, 2, 0, 0, 1 },
-    { 13,    11880,    396,   2376,    768,   2000,  128, 64,  0, 2, 0, 0, 1 },
-    { 20,    11880,    396,   2376,   2000,   2000,  128, 64,  0, 2, 0, 0, 1 },
-    { 21,    19800,    792,   4752,   4000,   4000,  256, 64,  0, 2, 0, 0, 0 },
-    { 22,    20250,   1620,   8100,   4000,   4000,  256, 64,  0, 2, 0, 0, 0 },
-    { 30,    40500,   1620,   8100,  10000,  10000,  256, 32, 22, 2, 0, 1, 0 },
-    { 31,   108000,   3600,  18000,  14000,  14000,  512, 16, 60, 4, 1, 1, 0 },
-    { 32,   216000,   5120,  20480,  20000,  20000,  512, 16, 60, 4, 1, 1, 0 },
-    { 40,   245760,   8192,  32768,  20000,  25000,  512, 16, 60, 4, 1, 1, 0 },
-    { 41,   245760,   8192,  32768,  50000,  62500,  512, 16, 24, 2, 1, 1, 0 },
-    { 42,   522240,   8704,  34816,  50000,  62500,  512, 16, 24, 2, 1, 1, 1 },
-    { 50,   589824,  22080, 110400, 135000, 135000,  512, 16, 24, 2, 1, 1, 1 },
-    { 51,   983040,  36864, 184320, 240000, 240000,  512, 16, 24, 2, 1, 1, 1 },
-    { 52,  2073600,  36864, 184320, 240000, 240000,  512, 16, 24, 2, 1, 1, 1 },
-    { 60,  4177920, 139264, 696320, 240000, 240000, 8192, 16, 24, 2, 1, 1, 1 },
-    { 61,  8355840, 139264, 696320, 480000, 480000, 8192, 16, 24, 2, 1, 1, 1 },
-    { 62, 16711680, 139264, 696320, 800000, 800000, 8192, 16, 24, 2, 1, 1, 1 },
-    { 0 }
-};
 
 #define ERROR(...)\
 {\

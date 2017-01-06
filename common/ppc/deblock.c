@@ -266,6 +266,7 @@ static inline vec_u8_t h264_deblock_q1( register vec_u8_t p0, register vec_u8_t 
     q1 = newq1;                                                                              \
 }
 
+#define x264_deblock_v_luma_altivec x264_template(deblock_v_luma_altivec)
 void x264_deblock_v_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 {
     if( (tc0[0] & tc0[1] & tc0[2] & tc0[3]) >= 0 )
@@ -284,6 +285,7 @@ void x264_deblock_v_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int 
     }
 }
 
+#define x264_deblock_h_luma_altivec x264_template(deblock_h_luma_altivec)
 void x264_deblock_h_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 {
 

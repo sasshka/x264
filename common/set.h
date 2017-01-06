@@ -27,24 +27,6 @@
 #ifndef X264_SET_H
 #define X264_SET_H
 
-enum profile_e
-{
-    PROFILE_BASELINE = 66,
-    PROFILE_MAIN     = 77,
-    PROFILE_HIGH    = 100,
-    PROFILE_HIGH10  = 110,
-    PROFILE_HIGH422 = 122,
-    PROFILE_HIGH444_PREDICTIVE = 244,
-};
-
-enum chroma_format_e
-{
-    CHROMA_400 = 0,
-    CHROMA_420 = 1,
-    CHROMA_422 = 2,
-    CHROMA_444 = 3,
-};
-
 enum cqm4_e
 {
     CQM_4IY = 0,
@@ -157,6 +139,7 @@ typedef struct
 
     int b_qpprime_y_zero_transform_bypass;
     int i_chroma_format_idc;
+    int i_bitdepth;
 
 } x264_sps_t;
 
@@ -340,8 +323,11 @@ static const uint8_t x264_cqm_avci100_720p_8iy[64] =
     32,32,32,34,34,36,38,42
 };
 
+#define x264_cqm_init x264_template(cqm_init)
 int  x264_cqm_init( x264_t *h );
+#define x264_cqm_delete x264_template(cqm_delete)
 void x264_cqm_delete( x264_t *h );
+#define x264_cqm_parse_file x264_template(cqm_parse_file)
 int  x264_cqm_parse_file( x264_t *h, const char *filename );
 
 #endif
