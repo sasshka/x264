@@ -72,6 +72,7 @@ typedef struct
     /* state of swapping chroma planes pre and post resize */
     int pre_swap_chroma;
     int post_swap_chroma;
+    int fast_mono;      /* yuv with planar luma can be "converted" to monochrome by simply ignoring chroma */
     int variable_input; /* input is capable of changing properties */
     int working;        /* we have already started working with frames */
     frame_prop_t dst;   /* desired output properties */
@@ -146,6 +147,7 @@ static int convert_csp_to_pix_fmt( int csp )
         return csp&X264_CSP_MASK;
     switch( csp&X264_CSP_MASK )
     {
+        case X264_CSP_I400: return csp&X264_CSP_HIGH_DEPTH ? AV_PIX_FMT_GRAY16    : AV_PIX_FMT_GRAY8;
         case X264_CSP_YV12: /* specially handled via swapping chroma */
         case X264_CSP_I420: return csp&X264_CSP_HIGH_DEPTH ? AV_PIX_FMT_YUV420P16 : AV_PIX_FMT_YUV420P;
         case X264_CSP_YV16: /* specially handled via swapping chroma */
@@ -400,7 +402,7 @@ static int check_resizer( resizer_hnd_t *h, cli_pic_t *in )
     if( h->ctx || h->working )
         x264_cli_log( NAME, X264_LOG_WARNING, "stream properties changed at pts %"PRId64"\n", in->pts );
     h->scale = input_prop;
-    if( !h->buffer_allocated )
+    if( !h->buffer_allocated && !h->fast_mono )
     {
         if( x264_cli_pic_alloc_aligned( &h->buffer, h->dst_csp, h->dst.width, h->dst.height ) )
             return -1;
@@ -497,8 +499,13 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
     if( h->dst.width != info->width || h->dst.height != info->height )
         x264_cli_log( NAME, X264_LOG_INFO, "resizing to %dx%d\n", h->dst.width, h->dst.height );
     if( h->dst.pix_fmt != src_pix_fmt )
+    {
         x264_cli_log( NAME, X264_LOG_WARNING, "converting from %s to %s\n",
                       av_get_pix_fmt_name( src_pix_fmt ), av_get_pix_fmt_name( h->dst.pix_fmt ) );
+        if( dst_csp == X264_CSP_I400 && h->dst.width == info->width && h->dst.height == info->height &&
+            ((src_csp >= X264_CSP_I420 && src_csp <= X264_CSP_NV16) || src_csp == X264_CSP_I444 || src_csp == X264_CSP_YV24) )
+            h->fast_mono = 1;
+    }
     else if( h->dst.range != h->input_range )
         x264_cli_log( NAME, X264_LOG_WARNING, "converting range from %s to %s\n",
                       h->input_range ? "PC" : "TV", h->dst.range ? "PC" : "TV" );
@@ -536,7 +543,7 @@ static int get_frame( hnd_t handle, cli_pic_t *output, int frame )
     h->working = 1;
     if( h->pre_swap_chroma )
         XCHG( uint8_t*, output->img.plane[1], output->img.plane[2] );
-    if( h->ctx )
+    if( h->ctx && !h->fast_mono )
     {
         sws_scale( h->ctx, (const uint8_t* const*)output->img.plane, output->img.stride,
                    0, output->img.height, h->buffer.img.plane, h->buffer.img.stride );

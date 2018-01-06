@@ -199,6 +199,9 @@ static const char * const pulldown_names[] = { "none", "22", "32", "64", "double
 static const char * const log_level_names[] = { "none", "error", "warning", "info", "debug", 0 };
 static const char * const output_csp_names[] =
 {
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I400
+    "i400",
+#endif
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "i420",
 #endif
@@ -213,6 +216,7 @@ static const char * const output_csp_names[] =
 static const char * const chroma_format_names[] =
 {
     [0] = "all",
+    [X264_CSP_I400] = "i400",
     [X264_CSP_I420] = "i420",
     [X264_CSP_I422] = "i422",
     [X264_CSP_I444] = "i444"
@@ -1333,6 +1337,13 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
         param->i_csp = X264_CSP_I444;
     else if( output_csp == X264_CSP_RGB && (csp < X264_CSP_BGR || csp > X264_CSP_RGB) )
         param->i_csp = X264_CSP_RGB;
+    else if( output_csp == X264_CSP_I400 && csp != X264_CSP_I400 )
+    {
+        param->i_csp = X264_CSP_I400;
+        /* Conversion from a csp with planar luma will simply use the input luma plane as is */
+        if( (csp >= X264_CSP_I420 && csp <= X264_CSP_NV16) || csp == X264_CSP_I444 || csp == X264_CSP_YV24 )
+            param->i_csp |= info->csp & ~X264_CSP_MASK;
+    }
     param->i_csp |= info->csp & X264_CSP_HIGH_DEPTH;
     /* if the output range is not forced, assign it to the input one now */
     if( param->vui.b_fullrange == RANGE_AUTO )
@@ -1556,7 +1567,7 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
 #if X264_CHROMA_FORMAT
                 static const uint8_t output_csp_fix[] = { X264_CHROMA_FORMAT, X264_CSP_RGB };
 #else
-                static const uint8_t output_csp_fix[] = { X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
+                static const uint8_t output_csp_fix[] = { X264_CSP_I400, X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
 #endif
                 param->i_csp = output_csp = output_csp_fix[output_csp];
                 break;
