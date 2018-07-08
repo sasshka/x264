@@ -304,3 +304,7 @@ p2 += i2;
         vec_st(vec_perm(_e, _v, _m), off, _dst);           \
     } while( 0 )
 #endif
+
+#ifndef __POWER9_VECTOR__
+#define vec_absd( a, b ) vec_sub( vec_max( a, b ), vec_min( a, b ) )
+#endif
