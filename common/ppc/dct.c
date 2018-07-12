@@ -153,17 +153,17 @@ void x264_sub8x8_dct_dc_altivec( int16_t dct[4], uint8_t *pix1, uint8_t *pix2 )
     diff[0] = vec_packs( sum[0], zero32 );
 
     diff[0] = vec_perm( diff[0], diff[0], mask ); // 0 0 2 2 1 1 3 3
-    tmp = vec_xxpermdi( diff[0], diff[0], 2 );    // 1 1 3 3 0 0 2 2
-    diff[1] = vec_add( diff[0], tmp );     // 0+1 0+1 2+3 2+3
-    diff[0] = vec_sub( diff[0], tmp );     // 0-1 0-1 2-3 2-3
-    tmp = vec_mergeh( diff[1], diff[0] );  // 0+1 0-1 0+1 0-1 2+3 2-3 2+3 2-3
-    diff[0] = vec_xxpermdi( tmp, tmp, 2 ); // 2+3 2-3 2+3 2-3
-    diff[1] = vec_add( tmp, diff[0] );     // 0+1+2+3 0-1+2+3
-    diff[0] = vec_sub( tmp, diff[0] );     // 0+1-2-3 0-1-2+3
+    tmp = xxpermdi( diff[0], diff[0], 2 );        // 1 1 3 3 0 0 2 2
+    diff[1] = vec_add( diff[0], tmp );            // 0+1 0+1 2+3 2+3
+    diff[0] = vec_sub( diff[0], tmp );            // 0-1 0-1 2-3 2-3
+    tmp = vec_mergeh( diff[1], diff[0] );         // 0+1 0-1 0+1 0-1 2+3 2-3 2+3 2-3
+    diff[0] = xxpermdi( tmp, tmp, 2 );            // 2+3 2-3 2+3 2-3
+    diff[1] = vec_add( tmp, diff[0] );            // 0+1+2+3 0-1+2+3
+    diff[0] = vec_sub( tmp, diff[0] );            // 0+1-2-3 0-1-2+3
     diff[0] = vec_mergeh( diff[1], diff[0] );
 
     diff[1] = vec_ld( 0, dct );
-    diff[0] = vec_xxpermdi( diff[0], diff[1], 0 );
+    diff[0] = xxpermdi( diff[0], diff[1], 0 );
     vec_st( diff[0], 0, dct );
 }
 
