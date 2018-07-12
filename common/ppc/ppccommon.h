@@ -324,6 +324,8 @@ static const vec_u8_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
                                          0x0E, 0x0F, 0x18, 0x19, 0x1A, 0x1B,
                                          0x1C, 0x1D, 0x1E, 0x1F };
 #define xxpermdi(a, b, c) vec_perm(a, b, xxpermdi##c##_perm)
+#elif (defined(__clang__) && __clang_major__ == 6)
+#define xxpermdi(a, b, c) vec_xxpermdi(b, a, ((c >> 1) | (c & 1) << 1) ^ 3)
 #elif defined(__GNUC__) && \
     (__GNUC__ > 6 || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3))
 #define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
